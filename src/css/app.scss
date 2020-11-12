@@ -1,0 +1,28 @@
+// Visual hint for required fields
+.q-field__native[required] ~ .q-field__label:after {
+  content: '*';
+  color: $primary;
+  margin-left: .5ch;
+}
+
+.q-field--error .q-field__native[required] ~ .q-field__label:after {
+  color: unset;
+}
+
+// Hide number field input spinners
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Workaround for font-awesome oversized icons
+ * @see https://github.com/quasarframework/quasar/issues/4858
+ */
+.q-icon.fas {
+  font-size: 1rem;
+}

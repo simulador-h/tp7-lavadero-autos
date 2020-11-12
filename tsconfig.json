@@ -1,0 +1,20 @@
+{
+  "extends": "@quasar/app/tsconfig-preset",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "app/*": ["*"],
+      "src/*": ["src/*"],
+      "boot/*": ["src/boot/*"],
+      "assets/*": ["src/assets/*"],
+      "components/*": ["src/components/*"],
+      "layouts/*": ["src/layouts/*"],
+      "pages/*": ["src/pages/*"],
+      "routes/*": ["src/routes/*"],
+      "models/*": ["src/models/*"],
+      "helpers/*": ["src/helpers/*"],
+      "workers/*": ["src/workers/*"]
+    },
+    "resolveJsonModule": true
+  }
+}
