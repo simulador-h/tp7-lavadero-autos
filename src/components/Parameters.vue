@@ -10,7 +10,7 @@
           <q-card flat bordered class="full-height">
             <q-card-section class="row items-center justify-between">
               <span class="text-uppercase text-caption text-primary">
-                Pedidos
+                Autos
               </span>
               <q-icon name="fas fa-boxes" class="text-primary" />
             </q-card-section>
@@ -19,11 +19,30 @@
 
             <q-card-section class="q-gutter-md">
               <probability-distribution
-                v-model="pedidos.demanda"
-                label="Demanda"
+                v-model="tiempoEntreLlegadas"
+                label="Tiempo entre llegadas"
               />
-              <probability-distribution
-                v-model="pedidos.tipo"
+
+              <q-input
+                v-model.number="tiempoDesmontado"
+                label="Tiempo de desmontado"
+                type="number"
+                suffix="minutos"
+                required
+                outlined stack-label
+                hide-bottom-space lazy-rules
+                :rules="[v.required(), v.gte(0)]"
+              />
+
+              <q-input
+                v-model.number="tiempoMontado"
+                label="Tiempo de montado"
+                type="number"
+                suffix="minutos"
+                required
+                outlined stack-label
+                hide-bottom-space lazy-rules
+                :rules="[v.required(), v.gte(0)]"
               />
             </q-card-section>
           </q-card>
@@ -33,7 +52,7 @@
           <q-card flat bordered class="full-height">
             <q-card-section class="row items-center justify-between">
               <span class="text-uppercase text-caption text-primary">
-                Entregas
+                Alfombras
               </span>
               <q-icon name="fas fa-hand-holding-heart" class="text-primary" />
             </q-card-section>
@@ -41,26 +60,9 @@
             <q-separator inset />
 
             <q-card-section class="q-gutter-md">
-              <q-input
-                v-model.number="entregas.tiempoLimiteCobro"
-                label="Tiempo límite de cobro"
-                type="number"
-                suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="entregas.tiempoLimiteEspera"
-                label="Tiempo límite de espera"
-                type="number"
-                suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
+              <probability-distribution
+                v-model="tiempoAspiradoAlfombra"
+                label="Tiempo de aspirado"
               />
             </q-card-section>
           </q-card>
@@ -70,7 +72,7 @@
           <q-card flat bordered class="full-height">
             <q-card-section class="row items-center justify-between">
               <span class="text-uppercase text-caption text-primary">
-                Sandwiches
+                Carrocerías
               </span>
               <q-icon name="fas fa-bread-slice" class="text-primary" />
             </q-card-section>
@@ -78,215 +80,18 @@
             <q-separator inset />
 
             <q-card-section class="q-gutter-md">
-              <q-input
-                v-model.number="pedidos.sandwiches.precioVenta"
-                label="Precio de venta"
-                type="number"
-                prefix="$"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
               <probability-distribution
-                v-model="pedidos.sandwiches.tiempoPreparacion"
-                label="Tiempo de preparación"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="row items-center justify-between">
-              <span class="text-uppercase text-caption text-primary">
-                Pizzas
-              </span>
-              <q-icon name="fas fa-pizza-slice" class="text-primary" />
-            </q-card-section>
-
-            <q-separator inset />
-
-            <q-card-section class="q-gutter-md">
-              <q-input
-                v-model.number="pedidos.pizzas.precioVenta"
-                label="Precio de venta"
-                type="number"
-                prefix="$"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="row items-center justify-between">
-              <span class="text-uppercase text-caption text-primary">
-                Empanadas
-              </span>
-              <q-icon name="fas fa-brain" class="text-primary" />
-            </q-card-section>
-
-            <q-separator inset />
-
-            <q-card-section class="q-gutter-md">
-              <probability-distribution
-                v-model="pedidos.empanadas.cantidadPedido"
-                label="Cantidad de pedido"
+                v-model="tiempoLavadoCarroceria"
+                label="Tiempo de lavado"
               />
 
               <q-input
-                v-model.number="pedidos.empanadas.precioVenta"
-                label="Precio de venta"
-                type="number"
-                prefix="$"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="pedidos.empanadas.tiempoPreparacionMedio"
-                label="Tiempo de preparación medio"
+                v-model.number="tiempoSecadoCarroceria"
+                label="Tiempo de secado"
                 type="number"
                 suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="pedidos.empanadas.tiempoPreparacionCompleto"
-                label="Tiempo de preparación completo"
-                type="number"
-                suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="pedidos.empanadas.capacidadMaximaFreidora"
-                label="Capacidad máxima por freidora"
-                type="number"
-                suffix="empanadas"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(1)]"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="row items-center justify-between">
-              <span class="text-uppercase text-caption text-primary">
-                Hamburgesas
-              </span>
-              <q-icon name="fas fa-hamburger" class="text-primary" />
-            </q-card-section>
-
-            <q-separator inset />
-
-            <q-card-section class="q-gutter-md">
-              <q-input
-                v-model.number="pedidos.hamburgesas.precioVenta"
-                label="Precio de venta"
-                type="number"
-                prefix="$"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="pedidos.hamburgesas.tiempoPreparacion"
-                label="Tiempo de preparación"
-                type="number"
-                suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="row items-center justify-between">
-              <span class="text-uppercase text-caption text-primary">
-                Lomitos
-              </span>
-              <q-icon name="fas fa-bacon" class="text-primary" />
-            </q-card-section>
-
-            <q-separator inset />
-
-            <q-card-section class="q-gutter-md">
-              <q-input
-                v-model.number="pedidos.lomitos.precioVenta"
-                label="Precio de venta"
-                type="number"
-                prefix="$"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-
-              <q-input
-                v-model.number="pedidos.lomitos.tiempoPreparacion"
-                label="Tiempo de preparación"
-                type="number"
-                suffix="minutos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="row items-center justify-between">
-              <span class="text-uppercase text-caption text-primary">
-                Envíos
-              </span>
-              <q-icon name="fas fa-shipping-fast" class="text-primary" />
-            </q-card-section>
-
-            <q-separator inset />
-
-            <q-card-section class="q-gutter-md">
-              <probability-distribution
-                v-model="envios.tiempoEnvio"
-                label="Tiempo de envío"
-              />
-
-              <q-input
-                v-model.number="envios.cantidadMaximaPorEnvio"
-                label="Cantidad máxima por envío"
-                type="number"
-                suffix="pedidos"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0)]"
+                readonly
+                outlined stack-label hide-bottom-space
               />
             </q-card-section>
           </q-card>
@@ -325,49 +130,15 @@
   import * as v from 'helpers/validation';
 
   export interface IParameters {
-    pedidos: {
-      demanda: Distribution
-      tipo: Distribution
+    tiempoEntreLlegadas: Distribution
 
-      sandwiches: {
-        cantidadPedido: Distribution | number
-        precioVenta: number
-        tiempoPreparacion: Distribution | number
-      }
-      pizzas: {
-        cantidadPedido: Distribution | number
-        precioVenta: number
-        tiempoPreparacion: Distribution | number
-      }
-      empanadas: {
-        cantidadPedido: Distribution | number
-        precioVenta: number
-        capacidadMaximaFreidora: number
-        tiempoPreparacionMedio: number
-        tiempoPreparacionCompleto: number
-      }
-      hamburgesas: {
-        cantidadPedido: Distribution | number
-        precioVenta: number
-        tiempoPreparacion: Distribution | number
-      }
-      lomitos: {
-        cantidadPedido: Distribution | number
-        precioVenta: number
-        tiempoPreparacion: Distribution | number
-      }
-    }
-    envios: {
-      tiempoEnvio: Distribution
-      cantidadMaximaPorEnvio: number
-    }
-    entregas: {
-      tiempoLimiteCobro: number
-      tiempoLimiteEspera: number
-    }
-    turnos: {
-      duracionTurno: number
-    }
+    tiempoDesmontado: number
+    tiempoMontado: number
+
+    tiempoAspiradoAlfombra: Distribution
+
+    tiempoLavadoCarroceria: Distribution
+    tiempoSecadoCarroceria: number
   }
 
   export default defineComponent({
@@ -398,12 +169,21 @@
       watch(
         () => props.parameters,
         () => {
-          const { pedidos, envios, entregas, turnos } = _.cloneDeep(props.parameters);
+          const {
+            tiempoEntreLlegadas,
+            tiempoDesmontado,
+            tiempoMontado,
+            tiempoAspiradoAlfombra,
+            tiempoLavadoCarroceria,
+            tiempoSecadoCarroceria,
+          } = _.cloneDeep(props.parameters);
 
-          state.pedidos = pedidos;
-          state.envios = envios;
-          state.entregas = entregas;
-          state.turnos = turnos;
+          state.tiempoEntreLlegadas = tiempoEntreLlegadas;
+          state.tiempoDesmontado = tiempoDesmontado;
+          state.tiempoMontado = tiempoMontado;
+          state.tiempoAspiradoAlfombra = tiempoAspiradoAlfombra;
+          state.tiempoLavadoCarroceria = tiempoLavadoCarroceria;
+          state.tiempoSecadoCarroceria = tiempoSecadoCarroceria;
         },
       );
 

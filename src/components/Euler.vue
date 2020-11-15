@@ -19,23 +19,14 @@
 
             <q-card-section class="q-gutter-md">
               <q-input
-                v-model.number="condicionesIniciales.E"
-                label="Índice de elaboración inicial"
+                v-model.number="condicionesIniciales.H"
+                label="Humedad inicial"
                 type="number"
+                suffix="%"
                 required
                 outlined stack-label
                 hide-bottom-space lazy-rules
                 :rules="[v.required(), v.gte(0), v.lte(100)]"
-              />
-
-              <q-input
-                v-model.number="K"
-                label="Coeficiente K"
-                type="number"
-                required
-                outlined stack-label
-                hide-bottom-space lazy-rules
-                :rules="[v.required(), v.gte(0.3), v.lte(0.8)]"
               />
 
               <q-input
@@ -45,12 +36,32 @@
                 required
                 outlined stack-label bottom-slots
                 lazy-rules
-                :rules="[v.required(), v.gte(0)]"
+                :rules="[v.required(), v.gt(0)]"
               >
                 <template #hint>
-                  <span>{{ h ? `${ h / ut } minutos` : '' }}</span>
+                  <span>{{ h && u ? `${ h / u } minutos` : '' }}</span>
                 </template>
               </q-input>
+
+              <q-input
+                v-model.number="u"
+                label="Magnitud de integración"
+                type="number"
+                suffix="minutos"
+                required
+                outlined stack-label
+                hide-bottom-space lazy-rules
+                :rules="[v.required(), v.gt(0)]"
+              />
+
+              <q-input
+                v-model.number="resultado"
+                label="Tiempo de secado"
+                type="number"
+                suffix="minutos"
+                readonly
+                outlined stack-label hide-bottom-space
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -107,19 +118,16 @@
 
   const eulerWorker = new Worker('workers/euler.worker.ts', { type: 'module' });
 
-  export interface IEuler {
-    condicionesIniciales: {
-      E: number
-      t: number
-    }
-    K: number
-    h: number
-    ut: number
-  }
-
   interface IEstado {
     t: number
-    E: number
+    H: number
+  }
+
+  export interface IEuler {
+    condicionesIniciales: IEstado
+    h: number
+    u: number
+    resultado?: number
   }
 
   export default defineComponent({
@@ -136,6 +144,8 @@
       const state = reactive({
         ..._.cloneDeep(props.euler),
 
+        resultado: props.euler.resultado,
+
         chartData: {},
         chartOptions: {
           responsive: true,
@@ -145,15 +155,15 @@
           },
           title: {
             display: true,
-            text: 'Índice de elaboración',
+            text: 'Humedad',
           },
           tooltips: {
             callbacks: {
               title([{ label }]) {
-                return `${Number(Number(label).toFixed(3))} minutos`;
+                return `Tiempo: ${Number(Number(label).toFixed(3))} minutos`;
               },
               label({ value }) {
-                return `E: ${Number(value).toFixed(3)}`;
+                return `Humedad: ${Number(value).toFixed(3)}%`;
               },
             },
           },
@@ -177,13 +187,13 @@
         } as ChartOptions,
       });
 
-      eulerWorker.onmessage = ({ data }) => {
-        const estados = _.values(data)[0];
+      eulerWorker.onmessage = ({ data: estados }) => {
+        state.resultado = estados[estados.length - 1].t;
 
         state.chartData = {
           datasets: [{
-            label: 'E',
-            data: estados.map(({ t: x, E: y }: IEstado) => ({ x, y })),
+            label: 'H',
+            data: estados.map(({ t: x, H: y }: IEstado) => ({ x, y })),
             borderWidth: 1,
 
             borderColor: 'rgb(103 194 58)',
@@ -196,17 +206,18 @@
             pointHoverBorderColor: 'rgb(103 194 58)',
           }],
         };
+
+        // @todo implement @change="" at form for dirty state management
       };
 
       const onRun = () => {
         eulerWorker.postMessage({
           condicionesIniciales: {
-            E: state.condicionesIniciales.E,
             t: state.condicionesIniciales.t,
+            H: state.condicionesIniciales.H,
           },
-          K: state.K,
           h: state.h,
-          ut: state.ut,
+          u: state.u,
           resultado: 'completo',
         });
       };
@@ -215,9 +226,9 @@
         // eslint-disable-next-line vue/require-explicit-emits
         emit('submit', {
           condicionesIniciales: state.condicionesIniciales,
-          K: state.K,
           h: state.h,
-          ut: state.ut,
+          u: state.u,
+          resultado: state.resultado,
         });
       };
 
@@ -231,12 +242,12 @@
       watch(
         () => props.euler,
         () => {
-          const { condicionesIniciales, K, h, ut } = _.cloneDeep(props.euler);
+          const { condicionesIniciales, h, u, resultado } = _.cloneDeep(props.euler);
 
           state.condicionesIniciales = condicionesIniciales;
-          state.K = K;
           state.h = h;
-          state.ut = ut;
+          state.u = u;
+          state.resultado = resultado;
         },
       );
 

@@ -21,7 +21,7 @@
         <euler :euler="euler" @submit="saveEuler" @reset="reloadEuler" />
       </q-tab-panel>
       <q-tab-panel name="simulation">
-        <simulation :parameters="parameters" :euler="euler" @finishRun="finishRun" @finish="finish" />
+        <simulation :parameters="parameters" :euler="euler" @finishRun="finishRun" />
       </q-tab-panel>
       <q-tab-panel name="results">
         <results :run-results="runResults" :results="results" />
@@ -39,98 +39,36 @@
   } from '@vue/composition-api';
 
   import _ from 'lodash';
-  import { jStat } from 'jstat';
 
-  import { ProbabilityDistribution } from 'models/ProbabilityDistribution';
-  import { NormalDistribution } from 'models/NormalDistribution';
+  import { UniformDistribution } from 'models/UniformDistribution';
   import { ExponentialDistribution } from 'models/ExponentialDistribution';
-  import { PoissonDistribution } from 'models/PoissonDistribution';
-  import { DiscreteDistribution } from 'models/DiscreteDistribution';
 
   import Euler, { IEuler } from 'components/Euler.vue';
   import Parameters, { IParameters } from 'components/Parameters.vue';
-  import Results, { IResults, IRunResults } from 'components/Results.vue';
+  import Results, { IResults } from 'components/Results.vue';
   import Simulation from 'components/Simulation.vue';
-
-  import eulerLookupTable from 'assets/application/json/euler-lookup-table.json';
 
   const eulerWorker = new Worker('workers/euler.worker.ts', { type: 'module' });
 
-  interface CustomParameters {
-    distribution: any
-    lookupTable: Record<string, number>
-  }
-
   const defaultParameters: IParameters = {
-    pedidos: {
-      demanda: new PoissonDistribution({ rate: 12 }),
-      tipo: new DiscreteDistribution({
-        sandwiches: 0.2,
-        pizzas: 0.4,
-        empanadas: 0.3,
-        hamburgesas: 0.05,
-        lomitos: 0.05,
-      }),
-      sandwiches: {
-        cantidadPedido: 1,
-        precioVenta: 500,
-        tiempoPreparacion: new NormalDistribution({ mean: 10, std: 5 }),
-      },
-      pizzas: {
-        cantidadPedido: 1,
-        precioVenta: 250,
-        tiempoPreparacion: new ProbabilityDistribution(
-          'custom',
-          {
-            distribution: jStat.uniform(0.3, 0.8),
-            lookupTable: eulerLookupTable,
-          } as CustomParameters,
-          {},
-          ({ distribution, lookupTable }) => {
-            const random = distribution.sample();
-            return lookupTable[random.toFixed(3)];
-          },
-        ),
-      },
-      empanadas: {
-        cantidadPedido: new PoissonDistribution({ rate: 3 }),
-        precioVenta: 25,
-        capacidadMaximaFreidora: 3,
-        tiempoPreparacionMedio: 2.5,
-        tiempoPreparacionCompleto: 3.5,
-      },
-      hamburgesas: {
-        cantidadPedido: 1,
-        precioVenta: 400,
-        tiempoPreparacion: 8,
-      },
-      lomitos: {
-        cantidadPedido: 1,
-        precioVenta: 450,
-        tiempoPreparacion: 8,
-      },
-    },
-    envios: {
-      tiempoEnvio: new ExponentialDistribution({ rate: 1 / 3 }),
-      cantidadMaximaPorEnvio: 3,
-    },
-    entregas: {
-      tiempoLimiteCobro: 25,
-      tiempoLimiteEspera: 60,
-    },
-    turnos: {
-      duracionTurno: 6 * 60,
-    },
+    tiempoEntreLlegadas: new ExponentialDistribution({ rate: 1 / 10 }),
+
+    tiempoDesmontado: 2,
+    tiempoMontado: 3,
+
+    tiempoAspiradoAlfombra: new UniformDistribution({ a: 3, b: 5 }),
+
+    tiempoLavadoCarroceria: new UniformDistribution({ a: 6, b: 12 }),
+    tiempoSecadoCarroceria: 2.31,
   };
 
   const defaultEuler: IEuler = {
     condicionesIniciales: {
       t: 0,
-      E: 100,
+      H: 100,
     },
-    K: 0.3,
-    h: 0.05,
-    ut: 0.5,
+    h: 0.01,
+    u: 1,
   };
 
   function useMontecarlo() {
@@ -155,34 +93,19 @@
 
         eulerWorker.postMessage({
           ...euler,
-          K: [0.3, 0.8],
           resultado: 'simple',
         });
       },
       reloadEuler: () => {
         state.euler = _.cloneDeep(defaultEuler);
       },
-      finishRun: (results: IRunResults) => {
-        state.runResults = results;
-      },
-      finish: (results: IResults) => {
+      finishRun: (results: IResults) => {
         state.results = results;
       },
     });
 
     eulerWorker.onmessage = ({ data }) => {
-      state.parameters.pedidos.pizzas.tiempoPreparacion = new ProbabilityDistribution(
-        'custom',
-        {
-          distribution: jStat.uniform(0.3, 0.8),
-          lookupTable: data,
-        } as CustomParameters,
-        {},
-        ({ distribution, lookupTable }) => {
-          const random = distribution.sample();
-          return lookupTable[random.toFixed(3)];
-        },
-      );
+      state.parameters.tiempoSecadoCarroceria = data.t;
     };
 
     return toRefs(state);

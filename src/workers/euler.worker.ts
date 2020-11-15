@@ -1,86 +1,58 @@
 /* eslint-disable no-restricted-globals */
-import _ from 'lodash';
 
 interface IData {
   condicionesIniciales: {
-    E: number
     t: number
+    H: number
   }
-  K: number | []
   h: number
+  u: number
   resultado: 'simple' | 'completo'
 }
 
 interface IEstado {
   t: number
-  E: number
+  H: number
 }
 
 const ctx: Worker = self as any;
 
-const fn = (t: number, E: number, K: number): number => (
-  -K * E - 1.99 + 0.0001 * t
+const fn = (t: number, H: number): number => (
+  -5 * (t ** 2) + 2 * H - 200
 );
 
-const tmin = (t: number, ut: number) => (
-  t / ut
+const tmin = (t: number, u: number) => (
+  t / u
 );
 
-const euler = (h: number, K: number, condicionesIniciales: IEstado): IEstado[] => {
+const euler = (h: number, u: number, condicionesIniciales: IEstado): IEstado[] => {
   let estado: IEstado = {
     t: condicionesIniciales.t,
-    E: condicionesIniciales.E,
+    H: condicionesIniciales.H,
   };
 
   const estados: IEstado[] = [estado];
 
   do {
     const t = estado.t + h;
-    const E = estado.E + h * fn(estado.t, estado.E, K);
+    const H = estado.H + h * fn(estado.t, estado.H);
 
-    estado = { t, E };
+    estado = { t, H };
     estados.push(estado);
   }
-  while (estado.E > 0);
+  while (estado.H > 0);
 
-  return estados.map(({ t, E }) => ({ t: tmin(t, 0.5), E }));
+  return estados.map(({ t, H }) => ({ t: tmin(t, u), H }));
 };
 
 ctx.onmessage = ({
-  data: { h, K, condicionesIniciales, resultado = 'simple' },
+  data: { h, u, condicionesIniciales, resultado = 'simple' },
 }: {
   data: IData
 }) => {
-  // eslint-disable-next-line no-underscore-dangle
-  let _K;
-
-  if (typeof K === 'number') {
-    _K = [K, K];
-  }
-  else {
-    _K = K;
-  }
-
-  const [min, max, precision = 3] = _K;
-  const pasoK = 1 / 10 ** precision;
-
-  const resultados = (new Array(
-    (max - min) / pasoK + 1,
-  ))
-    .fill(undefined)
-    .map(
-      (v, i) => {
-        const k = min + i * pasoK;
-        const estados = euler(h, k, condicionesIniciales);
-
-        return [
-          k.toFixed(precision),
-          (resultado === 'completo') ? estados : estados[estados.length - 1].t,
-        ];
-      },
-    );
+  const estados = euler(h, u, condicionesIniciales);
 
   ctx.postMessage(
-    _.fromPairs(resultados),
+    (resultado === 'completo') ? estados : estados[estados.length - 1],
   );
 };
