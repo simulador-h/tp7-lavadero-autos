@@ -24,7 +24,7 @@
         <simulation :parameters="parameters" :euler="euler" @finishRun="finishRun" />
       </q-tab-panel>
       <q-tab-panel name="results">
-        <results :run-results="runResults" :results="results" />
+        <results :results="results" />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -48,7 +48,15 @@
   import Results, { IResults } from 'components/Results.vue';
   import Simulation from 'components/Simulation.vue';
 
-  const eulerWorker = new Worker('workers/euler.worker.ts', { type: 'module' });
+  const defaultEuler: IEuler = {
+    condicionesIniciales: {
+      t: 0,
+      H: 100,
+    },
+    h: 0.01,
+    u: 1,
+    resultado: 2.3099999999999947,
+  };
 
   const defaultParameters: IParameters = {
     tiempoEntreLlegadas: new ExponentialDistribution({ rate: 1 / 10 }),
@@ -59,16 +67,7 @@
     tiempoAspiradoAlfombra: new UniformDistribution({ a: 3, b: 5 }),
 
     tiempoLavadoCarroceria: new UniformDistribution({ a: 6, b: 12 }),
-    tiempoSecadoCarroceria: 2.31,
-  };
-
-  const defaultEuler: IEuler = {
-    condicionesIniciales: {
-      t: 0,
-      H: 100,
-    },
-    h: 0.01,
-    u: 1,
+    tiempoSecadoCarroceria: defaultEuler.resultado as number,
   };
 
   function useMontecarlo() {
@@ -77,9 +76,8 @@
       parameters: _.cloneDeep(defaultParameters),
       euler: _.cloneDeep(defaultEuler),
       results: {},
-      runResults: {},
       showResults: computed(
-        () => !_.isEmpty(state.results) && !_.isEmpty(state.runResults),
+        () => !_.isEmpty(state.results),
       ),
 
       saveParameters: (parameters: IParameters) => {
@@ -90,11 +88,10 @@
       },
       saveEuler: (euler: IEuler) => {
         state.euler = _.cloneDeep(euler);
-
-        eulerWorker.postMessage({
-          ...euler,
-          resultado: 'simple',
-        });
+        state.parameters = {
+          ...state.parameters,
+          tiempoSecadoCarroceria: euler.resultado,
+        };
       },
       reloadEuler: () => {
         state.euler = _.cloneDeep(defaultEuler);
@@ -103,10 +100,6 @@
         state.results = results;
       },
     });
-
-    eulerWorker.onmessage = ({ data }) => {
-      state.parameters.tiempoSecadoCarroceria = data.t;
-    };
 
     return toRefs(state);
   }
