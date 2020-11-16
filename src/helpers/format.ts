@@ -1,22 +1,25 @@
-export const round = (value: number, decimals = 0) => (
+export const round = (decimals = 0) => (value: number) => (
   typeof value === 'number'
     ? Number(value.toFixed(decimals))
     : value
 );
 
-export const $ = (value: number, decimals = 0) => (
+export const $ = (decimals = 0) => (value: number) => (
   typeof value === 'number'
-    ? `$ ${round(value, decimals)}`
+    ? `$ ${round(decimals)(value)}`
     : value
 );
 
-export const percent = (value: number, decimals = 0) => (
+export const percent = (decimals = 0) => (value: number) => (
   typeof value === 'number'
-    ? `${round(value * 100, decimals)} %`
+    ? `${round(decimals)(value * 100)} %`
     : value
 );
 
-export const fallback = (value: number, fallbackText = '-', condition = (v: unknown) => v.toString) => (
+export const fallback = (
+  fallbackText = '-',
+  condition = (v: any) => v.toString,
+) => (value: number) => (
   condition(value)
     ? value.toString()
     : fallbackText

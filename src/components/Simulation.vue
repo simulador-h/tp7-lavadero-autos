@@ -153,48 +153,286 @@
   import {
     defineComponent,
     reactive,
-    computed,
     toRefs,
-    toRaw,
     PropType,
   } from '@vue/composition-api';
 
   import _ from 'lodash';
-  import { jStat } from 'jstat';
 
   import * as v from 'helpers/validation';
   import { round, $, percent, fallback } from 'helpers/format';
+  import { veil } from 'helpers/reactivity';
   import { incrementalMean, incrementalStd } from 'helpers/statistics';
 
   import { IParameters } from 'components/Parameters.vue';
   import { IResults } from 'components/Results.vue';
 
-  import { VectorEstado, ISerializableVectorEstado, Evento } from 'models/VectorEstado';
+  import {
+    VectorEstado,
+    Evento,
+    IProximoEvento,
+    ISerializableVectorEstado,
+  } from 'models/VectorEstado';
+
+  import {
+    Auto,
+    EstadoAuto,
+  } from 'models/Auto';
+
+  import {
+    Operario,
+    OperarioDesmontado,
+    OperarioAspirado,
+    OperarioLavado,
+    OperarioSecado,
+    OperarioMontado,
+    EstadoOperario,
+  } from 'models/Operario';
 
   type TSamplingEvaluator = (n: number) => boolean
 
-  function generarInicioSimulacion(parametros: IParameters): VectorEstado {
+  function ejecutarInicioSimulacion(parametros: IParameters): VectorEstado {
     const vector = new VectorEstado(parametros);
+
+    vector.sistema.iniciarSimulacion();
     return vector;
   }
 
-  function generarFinSimulacion(estado: VectorEstado, parametros: IParameters): VectorEstado {
+  function ejecutarFinSimulacion(vector: VectorEstado): VectorEstado {
+    vector.evento = Evento.FinSimulacion;
+    vector.emisor = vector.sistema;
 
+    vector.sistema.finalizarSimulacion();
+    return vector;
   }
 
-  function generarLlegadaAuto(estado: VectorEstado, parametros: IParameters): VectorEstado {
+  function ejecutarLlegadaAuto(vector: VectorEstado, { reloj, evento, id }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
 
+    // Generar nuevo auto
+    const auto = new Auto(id as number, reloj);
+    vector.emisor = auto;
+
+    // Generar próxima llegada
+    vector.proximoIdAuto += 1;
+    vector.proximaLlegadaAuto = reloj + vector.tiempoEntreLlegadas.sample();
+
+    // Iniciar desmontado si el operario está libre, agregar a la cola si está ocupado
+    const opDesmontado = vector.operarios.desmontado;
+
+    if (opDesmontado.estado === EstadoOperario.Libre) {
+      opDesmontado.iniciarDesmontado(reloj, auto);
+    }
+    else {
+      vector.colas.desmontado.push(auto);
+      vector.acumularEsperasColaDesmontado();
+    }
+
+    return vector;
   }
 
-  function generarFinDesmontado(estado: VectorEstado, parametros: IParameters): VectorEstado {
+  function ejecutarFinDesmontado(vector: VectorEstado, { reloj, evento, emisor }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
+    vector.emisor = emisor as Operario;
 
+    // Finalizar desmontado
+    const opDesmontado = vector.emisor as OperarioDesmontado;
+    const auto = opDesmontado.finalizarDesmontado(reloj);
+
+    // Iniciar aspirado si el operario está libre, agregar a la cola si está ocupado
+    const opAspirado = vector.operarios.aspirado;
+
+    if (opAspirado.estado === EstadoOperario.Libre) {
+      opAspirado.iniciarAspirado(reloj, auto);
+    }
+    else {
+      vector.colas.aspirado.push(auto);
+      vector.acumularEsperasColaAspirado();
+    }
+
+    // Iniciar lavado si al menos un operario está libre, agregar a la cola si están todos ocupados
+    const opLavado = vector.operarios.lavado.find(
+      ({ estado }) => estado === EstadoOperario.Libre,
+    );
+
+    if (opLavado) {
+      opLavado.iniciarLavado(reloj, auto);
+    }
+    else {
+      vector.colas.lavado.push(auto);
+      vector.acumularEsperasColaLavado();
+    }
+
+    return vector;
   }
 
-  function ejecutarProximoEvento(estado: VectorEstado, parametros: IParameters): VectorEstado {
+  function ejecutarFinAspirado(vector: VectorEstado, { reloj, evento, emisor }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
+    vector.emisor = emisor as Operario;
 
+    // Finalizar aspirado
+    const opAspirado = vector.emisor as OperarioAspirado;
+    const auto = opAspirado.finalizarAspirado(reloj);
+
+    /* Si la alfombra y carrocería están listas:
+     * - Iniciar montado si el operario está libre
+     * - Agregar a la cola si el operario está ocupado
+     */
+    if (auto.estado === EstadoAuto.EsperandoMontado) {
+      const opMontado = vector.operarios.montado;
+
+      if (opMontado.estado === EstadoOperario.Libre) {
+        opMontado.iniciarMontado(reloj, auto);
+      }
+      else {
+        vector.colas.montado.push(auto);
+        vector.acumularEsperasColaMontado();
+      }
+    }
+
+    return vector;
   }
 
-  function calcularResultados(estado: VectorEstado, parametros: IParameters): IResults {
+  function ejecutarFinLavado(vector: VectorEstado, { reloj, evento, emisor }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
+    vector.emisor = emisor as Operario;
+
+    // Finalizar lavado
+    const opLavado = vector.emisor as OperarioLavado;
+    const auto = opLavado.finalizarLavado(reloj);
+
+    // Iniciar secado si el operario está libre, agregar a la cola si está ocupado
+    const opSecado = vector.operarios.secado;
+
+    if (opSecado.estado === EstadoOperario.Libre) {
+      opSecado.iniciarSecado(reloj, auto);
+    }
+    else {
+      vector.colas.secado.push(auto);
+      vector.acumularEsperasColaSecado();
+    }
+
+    return vector;
+  }
+
+  function ejecutarFinSecado(vector: VectorEstado, { reloj, evento, emisor }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
+    vector.emisor = emisor as Operario;
+
+    // Finalizar secado
+    const opSecado = vector.emisor as OperarioSecado;
+    const auto = opSecado.finalizarSecado(reloj);
+
+    // Actualizar estado de operarios bloqueados
+    const operariosBloqueados = vector.operarios.lavado.filter(
+      ({ estado }) => estado === EstadoOperario.Bloqueado,
+    );
+
+    if (operariosBloqueados.length > 0) {
+      if (vector.colas.lavado.length === 0) {
+        // Liberar operarios
+        operariosBloqueados.forEach(
+          (operario) => { operario.estado = EstadoOperario.Libre; },
+        );
+      }
+
+      else if (vector.colas.lavado.length === 1) {
+        const [operarioLavado, ...operariosLiberados] = operariosBloqueados;
+
+        // Iniciar lavado
+        operarioLavado.iniciarLavado(reloj, vector.colas.lavado.shift() as Auto);
+
+        // Liberar operarios
+        operariosLiberados.forEach(
+          (operario) => { operario.estado = EstadoOperario.Libre; },
+        );
+      }
+
+      else {
+        // Iniciar lavado
+        const operarioLavado = operariosBloqueados[0];
+        operarioLavado.iniciarLavado(reloj, vector.colas.lavado.shift() as Auto);
+      }
+    }
+
+    /* Si la alfombra y carrocería están listas:
+     * - Iniciar montado si el operario está libre
+     * - Agregar a la cola si el operario está ocupado
+     */
+    if (auto.estado === EstadoAuto.EsperandoMontado) {
+      const opMontado = vector.operarios.montado;
+
+      if (opMontado.estado === EstadoOperario.Libre) {
+        opMontado.iniciarMontado(reloj, auto);
+      }
+      else {
+        vector.colas.montado.push(auto);
+        vector.acumularEsperasColaMontado();
+      }
+    }
+
+    return vector;
+  }
+
+  function ejecutarFinMontado(vector: VectorEstado, { reloj, evento, emisor }: IProximoEvento): VectorEstado {
+    vector.reloj = reloj;
+    vector.evento = evento;
+    vector.emisor = emisor as Operario;
+
+    // Finalizar montado
+    const opMontado = vector.emisor as OperarioMontado;
+    const auto = opMontado.finalizarMontado(reloj);
+
+    // Calcular estadísticas
+    vector.acumularTotalAutosProcesados();
+    vector.promediarTiempoEnSistema(auto.finMontado as number - auto.tiempoLlegada);
+
+    return vector;
+  }
+
+  function ejecutarProximoEvento(vector: VectorEstado): VectorEstado {
+    vector.iteracion += 1;
+    const eventos = vector.getProximosEventos();
+
+    if (eventos.length === 0) {
+      ejecutarFinSimulacion(vector);
+    }
+
+    const proximoEvento = _.minBy(eventos, 'reloj');
+
+    if (proximoEvento?.evento === Evento.LlegadaAuto) {
+      return ejecutarLlegadaAuto(vector, proximoEvento);
+    }
+
+    if (proximoEvento?.evento === Evento.FinDesmontado) {
+      return ejecutarFinDesmontado(vector, proximoEvento);
+    }
+
+    if (proximoEvento?.evento === Evento.FinAspirado) {
+      return ejecutarFinAspirado(vector, proximoEvento);
+    }
+
+    if (proximoEvento?.evento === Evento.FinLavado) {
+      return ejecutarFinLavado(vector, proximoEvento);
+    }
+
+    if (proximoEvento?.evento === Evento.FinSecado) {
+      return ejecutarFinSecado(vector, proximoEvento);
+    }
+
+    if (proximoEvento?.evento === Evento.FinMontado) {
+      return ejecutarFinMontado(vector, proximoEvento);
+    }
+
+    return ejecutarFinSimulacion(vector);
+  }
+
+  function calcularResultados(vector: VectorEstado, parametros: IParameters): IResults {
 
   }
 
@@ -206,27 +444,31 @@
     vectores: ISerializableVectorEstado[],
     resultados: IResults,
   } {
-    console.log(parametros);
-    let i = 1;
-    const vectores: ISerializableVectorEstado[] = [];
+    const vectores: ISerializableVectorEstado[] = veil([]);
 
-    const estado: VectorEstado = generarInicioSimulacion(parametros);
-
-    if (evaluador(i)) {
-      vectores.push(estado.toSerializable());
+    const vector: VectorEstado = ejecutarInicioSimulacion(parametros);
+    if (evaluador(vector.iteracion)) {
+      vectores.push(vector.toSerializable());
     }
 
-    while (i < iteraciones && estado.evento !== Evento.FinSimulacion) {
-      ejecutarProximoEvento(estado, parametros);
-
-      if (evaluador(i)) {
-        vectores.push(estado.toSerializable());
+    while (vector.evento !== Evento.FinSimulacion) {
+      if (vector.iteracion === iteraciones - 1) {
+        vector.iteracion += 1;
+        ejecutarFinSimulacion(vector);
+      }
+      else {
+        ejecutarProximoEvento(vector);
       }
 
-      i++;
+      if (evaluador(vector.iteracion)) {
+        vectores.push(vector.toSerializable());
+      }
     }
 
-    const resultados: IResults = calcularResultados(estado, parametros);
+    console.log('Vectores:', vectores);
+    console.log(`Tiempo de simulación: ${vector.sistema.tiempoSimulacion} ms`);
+
+    const resultados: IResults = calcularResultados(vector, parametros);
 
     return {
       vectores,
@@ -246,7 +488,7 @@
           field: (row: ISerializableVectorEstado) => row.reloj,
           align: 'right',
           required: true,
-          // format: round(2),
+          format: round(2),
         },
         {
           name: 'evento',

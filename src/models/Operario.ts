@@ -1,4 +1,4 @@
-/* eslint-disable max-classes-per-file */
+/* eslint-disable max-classes-per-file, no-underscore-dangle */
 import { Auto, ISerializableAuto } from 'models/Auto';
 import { ProbabilityDistribution } from 'models/ProbabilityDistribution';
 
@@ -110,13 +110,13 @@ export class OperarioMontado extends Operario {
     auto.iniciarMontado(reloj, this.tiempoMontado);
   }
 
-  finalizarMontado(reloj: number, auto = this.cola.shift()) {
+  finalizarMontado(reloj: number, auto = this.cola.shift()): Auto {
     this.acumularTiempoOcupado(
       this.auto?.tiempoMontado,
     );
 
     this.auto?.finalizarMontado();
-    // @todo calcular estadisticas en generarFinMontado (save and return auto)
+    const _auto = this.auto as Auto;
 
     if (auto) {
       this.iniciarMontado(reloj, auto);
@@ -125,6 +125,8 @@ export class OperarioMontado extends Operario {
       this.estado = EstadoOperario.Libre;
       this.auto = undefined;
     }
+
+    return _auto;
   }
 }
 
@@ -143,13 +145,13 @@ export class OperarioSecado extends Operario {
     auto.iniciarSecadoCarroceria(reloj, this.tiempoSecado);
   }
 
-  finalizarSecado(reloj: number, auto = this.cola.shift()) {
+  finalizarSecado(reloj: number, auto = this.cola.shift()): Auto {
     this.acumularTiempoOcupado(
       this.auto?.carroceria.tiempoSecado,
     );
 
     this.auto?.finalizarSecadoCarroceria();
-    // @todo iniciar Lavado en generarFinSecado | iniciar/encolar Montado en generarFinAspirado si listo (save and return auto)
+    const _auto = this.auto as Auto;
 
     if (auto) {
       this.iniciarSecado(reloj, auto);
@@ -158,6 +160,8 @@ export class OperarioSecado extends Operario {
       this.estado = EstadoOperario.Libre;
       this.auto = undefined;
     }
+
+    return _auto;
   }
 }
 
@@ -176,13 +180,13 @@ export class OperarioLavado extends Operario {
     auto.iniciarLavadoCarroceria(reloj, this.tiempoLavado.sample());
   }
 
-  finalizarLavado(reloj: number, auto = !this.isBloqueado() ? this.cola.shift() : undefined) {
+  finalizarLavado(reloj: number, auto = !this.isBloqueado() ? this.cola.shift() : undefined): Auto {
     this.acumularTiempoOcupado(
       this.auto?.carroceria.tiempoLavado,
     );
 
     this.auto?.finalizarLavadoCarroceria();
-    // @todo iniciar/esperar Secado en generarFinLavado (save and return auto)
+    const _auto = this.auto as Auto;
 
     if (auto) {
       this.iniciarLavado(reloj, auto);
@@ -196,6 +200,8 @@ export class OperarioLavado extends Operario {
       this.estado = EstadoOperario.Libre;
       this.auto = undefined;
     }
+
+    return _auto;
   }
 }
 
@@ -214,13 +220,13 @@ export class OperarioAspirado extends Operario {
     auto.iniciarAspiradoAlfombra(reloj, this.tiempoAspirado.sample());
   }
 
-  finalizarAspirado(reloj: number, auto = this.cola.shift()) {
+  finalizarAspirado(reloj: number, auto = this.cola.shift()): Auto {
     this.acumularTiempoOcupado(
       this.auto?.alfombra.tiempoAspirado,
     );
 
     this.auto?.finalizarAspiradoAlfombra();
-    // @todo iniciar/encolar Montado en generarFinAspirado si listo (save and return auto)
+    const _auto = this.auto as Auto;
 
     if (auto) {
       this.iniciarAspirado(reloj, auto);
@@ -229,6 +235,8 @@ export class OperarioAspirado extends Operario {
       this.estado = EstadoOperario.Libre;
       this.auto = undefined;
     }
+
+    return _auto;
   }
 }
 
@@ -247,13 +255,13 @@ export class OperarioDesmontado extends Operario {
     auto.iniciarDesmontado(reloj, this.tiempoDesmontado);
   }
 
-  finalizarDesmontado(reloj: number, auto = this.cola.shift()) {
+  finalizarDesmontado(reloj: number, auto = this.cola.shift()): Auto {
     this.acumularTiempoOcupado(
       this.auto?.tiempoDesmontado,
     );
 
     this.auto?.finalizarDesmontado();
-    // @todo iniciar/encolar Aspirado/Lavado en generarFinDesmontado (save and return auto)
+    const _auto = this.auto as Auto;
 
     if (auto) {
       this.iniciarDesmontado(reloj, auto);
@@ -262,5 +270,7 @@ export class OperarioDesmontado extends Operario {
       this.estado = EstadoOperario.Libre;
       this.auto = undefined;
     }
+
+    return _auto;
   }
 }
