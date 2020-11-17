@@ -76,7 +76,7 @@ export class Operario {
   }
 
   getDescripcion() {
-    return `Operario | ${this.tipo} (${this.id})`;
+    return `Operario (${this.tipo.charAt(0)}${this.id})`;
   }
 
   toSerializable(): ISerializableOperario {
@@ -180,7 +180,7 @@ export class OperarioLavado extends Operario {
     auto.iniciarLavadoCarroceria(reloj, this.tiempoLavado.sample());
   }
 
-  finalizarLavado(reloj: number, auto = !this.isBloqueado() ? this.cola.shift() : undefined): Auto {
+  finalizarLavado(): Auto {
     this.acumularTiempoOcupado(
       this.auto?.carroceria.tiempoLavado,
     );
@@ -188,18 +188,11 @@ export class OperarioLavado extends Operario {
     this.auto?.finalizarLavadoCarroceria();
     const _auto = this.auto as Auto;
 
-    if (auto) {
-      this.iniciarLavado(reloj, auto);
-    }
-    else if (this.isBloqueado() && this.cola.length > 0) {
-      this.estado = EstadoOperario.Bloqueado;
-      this.auto = undefined;
+    if (this.isBloqueado()) {
       this.acumularBloqueos();
     }
-    else {
-      this.estado = EstadoOperario.Libre;
-      this.auto = undefined;
-    }
+
+    this.estado = EstadoOperario.Bloqueado;
 
     return _auto;
   }

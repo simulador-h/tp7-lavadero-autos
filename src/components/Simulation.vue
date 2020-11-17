@@ -303,7 +303,7 @@
 
     // Finalizar lavado
     const opLavado = vector.emisor as OperarioLavado;
-    const auto = opLavado.finalizarLavado(reloj);
+    const auto = opLavado.finalizarLavado();
 
     // Iniciar secado si el operario está libre, agregar a la cola si está ocupado
     const opSecado = vector.operarios.secado;
@@ -328,36 +328,19 @@
     const opSecado = vector.emisor as OperarioSecado;
     const auto = opSecado.finalizarSecado(reloj);
 
-    // Actualizar estado de operarios bloqueados
-    const operariosBloqueados = vector.operarios.lavado.filter(
-      ({ estado }) => estado === EstadoOperario.Bloqueado,
-    );
+    // Desbloquear operario
+    const operarioBloqueado = vector.operarios.lavado.find(
+      (operario) => operario.auto?.id === auto.id,
+    ) as OperarioLavado;
 
-    if (operariosBloqueados.length > 0) {
-      if (vector.colas.lavado.length === 0) {
-        // Liberar operarios
-        operariosBloqueados.forEach(
-          (operario) => { operario.estado = EstadoOperario.Libre; },
-        );
-      }
-
-      else if (vector.colas.lavado.length === 1) {
-        const [operarioLavado, ...operariosLiberados] = operariosBloqueados;
-
-        // Iniciar lavado
-        operarioLavado.iniciarLavado(reloj, vector.colas.lavado.shift() as Auto);
-
-        // Liberar operarios
-        operariosLiberados.forEach(
-          (operario) => { operario.estado = EstadoOperario.Libre; },
-        );
-      }
-
-      else {
-        // Iniciar lavado
-        const operarioLavado = operariosBloqueados[0];
-        operarioLavado.iniciarLavado(reloj, vector.colas.lavado.shift() as Auto);
-      }
+    if (vector.colas.lavado.length === 0) {
+      // Liberar operario
+      operarioBloqueado.estado = EstadoOperario.Libre;
+      operarioBloqueado.auto = undefined;
+    }
+    else {
+      // Iniciar lavado
+      operarioBloqueado.iniciarLavado(reloj, vector.colas.lavado.shift() as Auto);
     }
 
     /* Si la alfombra y carrocería están listas:
