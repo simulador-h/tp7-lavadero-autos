@@ -125,25 +125,37 @@
   }
 
   /deep/ .q-table {
-    thead tr:first-child th:first-child,
-    thead tr:first-child th:nth-child(2) {
-      color: white;
-      background-color: $primary;
-    }
-
-    td:first-child,
-    td:nth-child(2) {
-      background-color: #f5f5f5;
+    th.sticky, td.sticky {
+      position: sticky;
+      z-index: 1;
     }
 
     th:first-child,
-    td:first-child,
+    td:first-child {
+      left: 0;
+      min-width: 4rem;
+      max-width: 4rem;
+    }
+
     th:nth-child(2),
     td:nth-child(2) {
-      position: sticky;
-      left: 0;
-      min-width: 3.5rem;
-      z-index: 1;
+      left: 4rem;
+      min-width: 6rem;
+      max-width: 6rem;
+    }
+
+    th:nth-child(3),
+    td:nth-child(3) {
+      left: 10rem;
+      min-width: 8rem;
+      max-width: 8rem;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      left: 18rem;
+      min-width: 7rem;
+      max-width: 7rem;
     }
   }
 </style>
@@ -462,34 +474,316 @@
   function useSimulation(props: { parameters: IParameters }, emit: any) {
     const state = reactive({
       iteraciones: 1000000,
-      condicionMuestreo: 'n <= 25 || !(n % 1000)',
+      condicionMuestreo: 'n <= 60 || !(n % 100000)',
 
       columnas: [
         {
+          name: 'iteracion',
+          label: 'Iteración',
+          field: (vector: ISerializableVectorEstado) => vector.iteracion,
+          required: true,
+          headerClasses: 'bg-amber-2 sticky',
+          classes: 'bg-amber-1 sticky ellipsis',
+          align: 'right',
+        },
+        {
           name: 'reloj',
           label: 'Reloj',
-          field: (row: ISerializableVectorEstado) => row.reloj,
-          align: 'right',
+          field: (vector: ISerializableVectorEstado) => vector.reloj,
           required: true,
           format: round(2),
+          headerClasses: 'bg-amber-2 sticky',
+          classes: 'bg-amber-1 sticky ellipsis',
+          align: 'center',
         },
         {
           name: 'evento',
           label: 'Evento',
-          field: (row: ISerializableVectorEstado) => row.evento,
-          align: 'left',
+          field: (vector: ISerializableVectorEstado) => vector.evento,
           required: true,
+          headerClasses: 'bg-amber-2 sticky',
+          classes: 'bg-amber-1 sticky ellipsis',
+          align: 'left',
         },
         {
           name: 'emisor',
           label: 'Emisor',
-          field: (row: ISerializableVectorEstado) => row.emisor.descripcion,
+          field: (vector: ISerializableVectorEstado) => vector.emisor.descripcion,
+          required: true,
+          headerClasses: 'bg-amber-2 sticky',
+          classes: 'bg-amber-1 sticky ellipsis',
+          align: 'left',
+        },
+
+        {
+          name: 'proxima-llegada',
+          label: 'Próxima Llegada',
+          field: (vector: ISerializableVectorEstado) => vector.proximaLlegadaAuto,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-green-2',
+          classes: 'bg-green-1',
+          format: round(2),
+        },
+
+        {
+          name: 'operario-desmontado--estado',
+          label: 'D1 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.desmontado.estado,
           align: 'left',
           required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-desmontado--auto',
+          label: 'D1 - Auto',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.desmontado.auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-desmontado--fin-desmontado',
+          label: 'D1 - Fin Desmontado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.desmontado.auto?.finDesmontado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-lime-2',
+          classes: 'bg-lime-1',
+          format: round(2),
+        },
+        {
+          name: 'operario-desmontado--tamaño-cola',
+          label: 'D1 - Cola',
+          field: (vector: ISerializableVectorEstado) => vector.colas.desmontado.tamaño,
+          align: 'center',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-desmontado--orden-cola',
+          label: 'D1 - Orden',
+          field: (vector: ISerializableVectorEstado) => vector.colas.desmontado.orden,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+
+        {
+          name: 'operario-aspirado--estado',
+          label: 'A2 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.aspirado.estado,
+          align: 'left',
+          required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-aspirado--auto',
+          label: 'A2 - Alfombra',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.aspirado.auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-aspirado--fin-aspirado',
+          label: 'A2 - Fin Aspirado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.aspirado.auto?.alfombra.finAspirado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-red-2',
+          classes: 'bg-red-1',
+          format: round(2),
+        },
+        {
+          name: 'operario-aspirado--tamaño-cola',
+          label: 'A2 - Cola',
+          field: (vector: ISerializableVectorEstado) => vector.colas.aspirado.tamaño,
+          align: 'center',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-aspirado--orden-cola',
+          label: 'A2 - Orden',
+          field: (vector: ISerializableVectorEstado) => vector.colas.aspirado.orden,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+
+        {
+          name: 'operario-lavado-0--estado',
+          label: 'L3.1 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[0].estado,
+          align: 'left',
+          required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-lavado-0--auto',
+          label: 'L3.1 - Carrocería',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[0].auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-lavado-0--fin-lavado',
+          label: 'L3.1 - Fin Lavado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[0].auto?.carroceria.finLavado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-cyan-2',
+          classes: 'bg-cyan-1',
+          format: round(2),
+        },
+
+        {
+          name: 'operario-lavado-1--estado',
+          label: 'L3.2 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[1].estado,
+          align: 'left',
+          required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-lavado-1--auto',
+          label: 'L3.2 - Carrocería',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[1].auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-lavado-1--fin-lavado',
+          label: 'L3.2 - Fin Lavado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.lavado[1].auto?.carroceria.finLavado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-cyan-2',
+          classes: 'bg-cyan-1',
+          format: round(2),
+        },
+
+        {
+          name: 'operario-lavado--tamaño-cola',
+          label: 'L3 - Cola',
+          field: (vector: ISerializableVectorEstado) => vector.colas.lavado.tamaño,
+          align: 'center',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-lavado--orden-cola',
+          label: 'L3 - Orden',
+          field: (vector: ISerializableVectorEstado) => vector.colas.lavado.orden,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+
+        {
+          name: 'operario-secado--estado',
+          label: 'S4 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.secado.estado,
+          align: 'left',
+          required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-secado--auto',
+          label: 'S4 - Carrocería',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.secado.auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-secado--fin-secado',
+          label: 'S4 - Fin Secado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.secado.auto?.carroceria.finSecado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-yellow-2',
+          classes: 'bg-yellow-1',
+          format: round(2),
+        },
+        {
+          name: 'operario-secado--tamaño-cola',
+          label: 'S4 - Cola',
+          field: (vector: ISerializableVectorEstado) => vector.colas.secado.tamaño,
+          align: 'center',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-secado--orden-cola',
+          label: 'S4 - Orden',
+          field: (vector: ISerializableVectorEstado) => vector.colas.secado.orden,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+
+        {
+          name: 'operario-montado--estado',
+          label: 'M5 - Estado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.montado.estado,
+          align: 'left',
+          required: true,
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-montado--auto',
+          label: 'M5 - Auto',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.montado.auto?.descripcion,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-montado--fin-montado',
+          label: 'M5 - Fin Montado',
+          field: (vector: ISerializableVectorEstado) => vector.operarios.montado.auto?.finMontado,
+          align: 'center',
+          required: true,
+          headerClasses: 'bg-indigo-2',
+          classes: 'bg-indigo-1',
+          format: round(2),
+        },
+        {
+          name: 'operario-montado--tamaño-cola',
+          label: 'M5 - Cola',
+          field: (vector: ISerializableVectorEstado) => vector.colas.montado.tamaño,
+          align: 'center',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
+        },
+        {
+          name: 'operario-montado--orden-cola',
+          label: 'M5 - Orden',
+          field: (vector: ISerializableVectorEstado) => vector.colas.montado.orden,
+          align: 'left',
+          headerClasses: 'bg-grey-2',
+          classes: 'bg-grey-1',
         },
       ],
+
       columnasVisibles: [
-        'reloj', 'evento', 'emisor',
+        'iteracion', 'reloj', 'evento', 'emisor', 'proxima-llegada',
+        'operario-desmontado--estado', 'operario-desmontado--auto', 'operario-desmontado--fin-desmontado',
+        'operario-aspirado--estado', 'operario-aspirado--auto', 'operario-aspirado--fin-aspirado',
+        'operario-lavado-0--estado', 'operario-lavado-0--auto', 'operario-lavado-0--fin-lavado',
+        'operario-lavado-1--estado', 'operario-lavado-1--auto', 'operario-lavado-1--fin-lavado',
+        'operario-secado--estado', 'operario-secado--auto', 'operario-secado--fin-secado',
+        'operario-montado--estado', 'operario-montado--auto', 'operario-montado--fin-montado',
       ],
 
       vectores: [] as ISerializableVectorEstado[],
