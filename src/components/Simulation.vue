@@ -455,6 +455,7 @@
       }
     }
 
+    // eslint-disable-next-line no-console
     console.info(`Tiempo de simulación: ${vector.sistema.tiempoSimulacion} ms`);
 
     const resultados: IResults = vector.getFullStatistics();
