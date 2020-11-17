@@ -6,6 +6,71 @@
 {{ results }}
 ```
       </q-markdown>
+      <q-markdown>
+### Servidores [P]
+--------------
+- Desmontado
+- Montado
+- Aspirado
+- Lavado
+- Secado
+
+### Clientes [T]
+------------
+- Auto (Alfombra, Carrocería)
+
+### Eventos
+-----------
+- Inicio Simulacion
+- Fin Simulacion
+- Llegada Auto
+- Fin Desmontado
+- Fin Montado
+- Fin Aspirado
+- Fin Lavado
+- Fin Secado
+      </q-markdown>
+      <q-markdown>
+### Estados Servidor
+--------------------
+- Libre
+- Ocupado
+- Bloqueado
+
+### Estados Auto
+----------------
+- Esperando Desmontado
+- Siendo Desmontado
+- Desmontado
+- Esperando Alfombra
+- Esperando Carroceria
+- Esperando Montado
+- Siendo Montado
+- Montado
+
+### Estados Alfombra
+--------------------
+- EsperandoAspirado
+- SiendoAspirado
+- Aspirado
+
+### Estados Carrocería
+----------------------
+- EsperandoLavado
+- SiendoLavado
+- EsperandoSecado
+- SiendoSecado
+- Lavado
+- Secado
+      </q-markdown>
+      <q-markdown>
+### Colas
+--------------------
+- Desmontado
+- Montado
+- Aspirado
+- Lavado
+      </q-markdown>
     </div>
   </q-page>
 </template>
