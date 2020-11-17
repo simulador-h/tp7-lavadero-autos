@@ -293,12 +293,20 @@ export class VectorEstado {
     return eventos;
   }
 
+  getProbabilidadEsperarDesmontado(cantidadTotal: number) {
+    return this.estadisticos.esperasColaDesmontado / cantidadTotal;
+  }
+
   acumularEsperasColaDesmontado(esperas = 1) {
     this.estadisticos.esperasColaDesmontado += esperas;
     this.estadisticos.maximaColaDesmontado = Math.max(
       this.estadisticos.maximaColaDesmontado,
       this.colas.desmontado.length,
     );
+  }
+
+  getProbabilidadEsperarAspirado(cantidadTotal: number) {
+    return this.estadisticos.esperasColaAspirado / cantidadTotal;
   }
 
   acumularEsperasColaAspirado(esperas = 1) {
@@ -309,6 +317,10 @@ export class VectorEstado {
     );
   }
 
+  getProbabilidadEsperarLavado(cantidadTotal: number) {
+    return this.estadisticos.esperasColaLavado / cantidadTotal;
+  }
+
   acumularEsperasColaLavado(esperas = 1) {
     this.estadisticos.esperasColaLavado += esperas;
     this.estadisticos.maximaColaLavado = Math.max(
@@ -317,12 +329,20 @@ export class VectorEstado {
     );
   }
 
+  getProbabilidadEsperarSecado(cantidadTotal: number) {
+    return this.estadisticos.esperasColaSecado / cantidadTotal;
+  }
+
   acumularEsperasColaSecado(esperas = 1) {
     this.estadisticos.esperasColaSecado += esperas;
     this.estadisticos.maximaColaSecado = Math.max(
       this.estadisticos.maximaColaSecado,
       this.colas.secado.length,
     );
+  }
+
+  getProbabilidadEsperarMontado(cantidadTotal: number) {
+    return this.estadisticos.esperasColaMontado / cantidadTotal;
   }
 
   acumularEsperasColaMontado(esperas = 1) {
@@ -343,6 +363,101 @@ export class VectorEstado {
       this.estadisticos.totalAutosProcesados,
       this.estadisticos.tiempoPromedioEnSistema,
     );
+  }
+
+  getFullStatistics() {
+    const {
+      operarios: {
+        desmontado: operarioDesmontado,
+        aspirado: operarioAspirado,
+        lavado: operariosLavado,
+        secado: operarioSecado,
+        montado: operarioMontado,
+      },
+      estadisticos: {
+        totalAutosProcesados,
+        tiempoPromedioEnSistema,
+
+        esperasColaDesmontado,
+        maximaColaDesmontado,
+        esperasColaAspirado,
+        maximaColaAspirado,
+        esperasColaLavado,
+        maximaColaLavado,
+        esperasColaSecado,
+        maximaColaSecado,
+        esperasColaMontado,
+        maximaColaMontado,
+      },
+    } = this;
+
+    return {
+      autos: {
+        totalProcesados: totalAutosProcesados,
+        tiempoPromedioEnSistema,
+      },
+      operarios: {
+        desmontado: {
+          tiempoOcupado: operarioDesmontado.tiempoOcupado,
+          probabilidadOcupado: operarioDesmontado.getProbabilidadOcupado(this.reloj),
+          cola: {
+            esperas: esperasColaDesmontado,
+            probabilidad: this.getProbabilidadEsperarDesmontado(totalAutosProcesados),
+            maximo: maximaColaDesmontado,
+          },
+        },
+        aspirado: {
+          tiempoOcupado: operarioAspirado.tiempoOcupado,
+          probabilidadOcupado: operarioAspirado.getProbabilidadOcupado(this.reloj),
+          cola: {
+            esperas: esperasColaAspirado,
+            probabilidad: this.getProbabilidadEsperarAspirado(totalAutosProcesados),
+            maximo: maximaColaAspirado,
+          },
+        },
+        lavado: {
+          tiempoOcupado: (
+            operariosLavado[0].tiempoOcupado
+            + operariosLavado[1].tiempoOcupado
+          ) / 2,
+          probabilidadOcupado: (
+            operariosLavado[0].getProbabilidadOcupado(this.reloj)
+            + operariosLavado[1].getProbabilidadOcupado(this.reloj)
+          ) / 2,
+          bloqueos: (
+            operariosLavado[0].bloqueos
+            + operariosLavado[1].bloqueos
+          ) / 2,
+          probabilidadBloqueado: (
+            operariosLavado[0].getProbabilidadBloqueado(totalAutosProcesados / 2)
+            + operariosLavado[1].getProbabilidadBloqueado(totalAutosProcesados / 2)
+          ) / 2,
+          cola: {
+            esperas: esperasColaLavado,
+            probabilidad: this.getProbabilidadEsperarLavado(totalAutosProcesados),
+            maximo: maximaColaLavado,
+          },
+        },
+        secado: {
+          tiempoOcupado: operarioSecado.tiempoOcupado,
+          probabilidadOcupado: operarioSecado.getProbabilidadOcupado(this.reloj),
+          cola: {
+            esperas: esperasColaSecado,
+            probabilidad: this.getProbabilidadEsperarSecado(totalAutosProcesados),
+            maximo: maximaColaSecado,
+          },
+        },
+        montado: {
+          tiempoOcupado: operarioMontado.tiempoOcupado,
+          probabilidadOcupado: operarioMontado.getProbabilidadOcupado(this.reloj),
+          cola: {
+            esperas: esperasColaMontado,
+            probabilidad: this.getProbabilidadEsperarMontado(totalAutosProcesados),
+            maximo: maximaColaMontado,
+          },
+        },
+      },
+    };
   }
 
   toSerializable(): ISerializableVectorEstado {

@@ -172,9 +172,8 @@
   import _ from 'lodash';
 
   import * as v from 'helpers/validation';
-  import { round, $, percent, fallback } from 'helpers/format';
+  import { round } from 'helpers/format';
   import { veil } from 'helpers/reactivity';
-  import { incrementalMean, incrementalStd } from 'helpers/statistics';
 
   import { IParameters } from 'components/Parameters.vue';
   import { IResults } from 'components/Results.vue';
@@ -427,10 +426,6 @@
     return ejecutarFinSimulacion(vector);
   }
 
-  function calcularResultados(vector: VectorEstado, parametros: IParameters): IResults {
-
-  }
-
   function ejecutarSimulacion(
     iteraciones: number,
     parametros: IParameters,
@@ -460,10 +455,9 @@
       }
     }
 
-    console.log('Vectores:', vectores);
-    console.log(`Tiempo de simulación: ${vector.sistema.tiempoSimulacion} ms`);
+    console.info(`Tiempo de simulación: ${vector.sistema.tiempoSimulacion} ms`);
 
-    const resultados: IResults = calcularResultados(vector, parametros);
+    const resultados: IResults = vector.getFullStatistics();
 
     return {
       vectores,
