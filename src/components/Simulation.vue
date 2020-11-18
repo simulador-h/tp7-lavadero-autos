@@ -59,7 +59,7 @@
     </q-form>
 
     <q-table
-      title="Pizzería"
+      title="Lavadero de autos"
       class="q-mt-md"
       flat dense bordered
       row-key="id"
@@ -74,7 +74,7 @@
     >
       <template #top="props">
         <div class="q-table__title">
-          Pizzería
+          Lavadero de autos
         </div>
 
         <q-space />
